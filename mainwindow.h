@@ -7,6 +7,9 @@
 #include <QDebug>
 #include <QSerialPort>        //提供访问串口的功能
 #include <QSerialPortInfo>    //提供系统中存在的串口的信息
+#include <QTimer>
+#include <QMessageBox>
+#include <QDateTime>
 
 #pragma execution_character_set("utf-8")
 
@@ -28,10 +31,22 @@ public:
 
     void initWindow();
 
+    void timerEvent(QTimerEvent *event);
+
+    void sendData();
+
     QSerialPort serial;
 
     QPoint m_startPos;
     QPoint m_startPosOrg;
+
+    int m_recvHex;
+    int m_sendHex;
+    int m_sendTimer;
+
+    int m_showTimestamp;
+
+    int m_sendTimerId;
 
 private slots:
     void readyRead();
@@ -41,15 +56,17 @@ private slots:
 
     void on_btnClearRecv_clicked();
 
-    void on_ckHex_stateChanged(int arg1);
+    void on_ckRecvHex_stateChanged(int arg1);
 
-    void on_ckTime_stateChanged(int arg1);
+    void on_ckTimestamp_stateChanged(int arg1);
 
     void on_btnSend_clicked();
 
     void on_btnClearSend_clicked();
 
     void on_chSendHex_stateChanged(int arg1);
+
+    void on_ckSendTimer_stateChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;
