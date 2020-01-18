@@ -76,6 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    initMainWindow();
     initWindow();
 }
 
@@ -85,24 +86,49 @@ MainWindow::~MainWindow()
 }
 
 
-//void MainWindow::mousePressEvent(QMouseEvent *event)
-//{
-//    m_startPos = event->globalPos();
-//    m_startPosOrg = event->pos();
-//}
+void MainWindow::mousePressEvent(QMouseEvent *event)
+{
+    //当鼠标左键点击时.
+    if (event->button() == Qt::LeftButton)
+    {
+        //记录鼠标的世界坐标
+        m_startPos = event->globalPos();
+        //记录窗体的世界坐标
+        m_windowPos = this->frameGeometry().topLeft();
+        m_pressMouse = 1;
+    }
+    else if(event->button() == Qt::RightButton)
+    {
 
-//void MainWindow::mouseMoveEvent(QMouseEvent *event)
-//{
-//    if(event->buttons() & Qt::LeftButton)
-//    {
-//        QPoint movePos = event->globalPos() - m_startPos;
-//        if( movePos.manhattanLength() > 5)
-//            this->move(event->globalPos() - m_startPosOrg);
-//        return;
-//    }
-//}
+    }
+}
 
-void MainWindow::initWindow()
+void MainWindow::mouseMoveEvent(QMouseEvent *event)
+{
+    if (event->buttons() == Qt::LeftButton)
+    {
+        if (m_pressMouse)
+        {
+        //移动中的鼠标位置相对于初始位置的相对位置
+        QPoint relativePos = event->globalPos() - m_startPos;
+        //然后移动窗体即可
+        this->move(m_windowPos + relativePos );
+
+        }
+    }
+    else if(event->button() == Qt::RightButton)
+    {
+
+    }
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *event)
+{
+    m_pressMouse = 0;
+}
+
+// 对主窗口的初始化
+void MainWindow::initMainWindow()
 {
     setWindowTitle(tr("QtSerialPort"));
     setMinimumSize(480, 320);
@@ -111,8 +137,11 @@ void MainWindow::initWindow()
     winFlags = winFlags | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint;
 
     setWindowFlags(winFlags);
+}
 
-    /////////////////////////////////////////////////////////////
+void MainWindow::initWindow()
+{
+    m_pressMouse = 0;
     m_recvHex = 0;
     m_sendHex = 0;
     m_sendTimer = 0;

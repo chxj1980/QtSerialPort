@@ -26,10 +26,12 @@ public:
     ~MainWindow();
 
 public:
-//    void mousePressEvent(QMouseEvent *event);
-//    void mouseMoveEvent(QMouseEvent *event);
 
+    void initMainWindow();
     void initWindow();
+    void mousePressEvent(QMouseEvent *event); // 鼠标按下
+    void mouseMoveEvent(QMouseEvent *event); // 鼠标移动
+    void mouseReleaseEvent(QMouseEvent *event); // 鼠标释放
 
     void timerEvent(QTimerEvent *event);
 
@@ -37,8 +39,9 @@ public:
 
     QSerialPort serial;
 
+    int m_pressMouse;
     QPoint m_startPos;
-    QPoint m_startPosOrg;
+    QPoint m_windowPos;
 
     int m_recvHex;
     int m_sendHex;
