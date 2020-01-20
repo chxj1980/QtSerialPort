@@ -29,6 +29,9 @@ public:
 
     void initMainWindow();
     void initWindow();
+    void initStatusBar();
+
+    bool eventFilter(QObject *watched, QEvent *event);
     void mousePressEvent(QMouseEvent *event); // 鼠标按下
     void mouseMoveEvent(QMouseEvent *event); // 鼠标移动
     void mouseReleaseEvent(QMouseEvent *event); // 鼠标释放
@@ -36,6 +39,7 @@ public:
     void timerEvent(QTimerEvent *event);
 
     void sendData();
+    void sendHexData(QString& tips, uint8_t* ibuf, uint8_t ilen);
 
     QSerialPort serial;
 
@@ -50,6 +54,16 @@ public:
     int m_showTimestamp;
 
     int m_sendTimerId;
+
+    // 状态栏相关
+    QLabel* m_stsEmpty;
+    QLabel* m_stsDebugInfo;
+    QLabel* m_stsSysTime;
+    QLabel* m_stsCopyright;
+    QLabel* m_stsExit;
+
+signals:
+    void sig_exit();
 
 private slots:
     void readyRead();
@@ -70,6 +84,18 @@ private slots:
     void on_chSendHex_stateChanged(int arg1);
 
     void on_ckSendTimer_stateChanged(int arg1);
+
+    void on_cbPortName_currentTextChanged(const QString &arg1);
+
+    void on_cbBaudrate_currentTextChanged(const QString &arg1);
+
+    void on_cbDatabit_currentTextChanged(const QString &arg1);
+
+    void on_cbStopbit_currentIndexChanged(int index);
+
+    void on_cbParity_currentIndexChanged(int index);
+
+    void on_cbFlow_currentIndexChanged(int index);
 
 private:
     Ui::MainWindow *ui;
