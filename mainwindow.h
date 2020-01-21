@@ -41,6 +41,9 @@ public:
     void sendData();
     void sendHexData(QString& tips, uint8_t* ibuf, uint8_t ilen);
 
+    void printDebugInfo(const char* str);
+
+
     QSerialPort serial;
 
     int m_pressMouse;
@@ -56,11 +59,17 @@ public:
 
     int m_sendTimerId;
 
+    int m_rxCnt;
+    int m_txCnt;
+
     // 状态栏相关
-    QLabel* m_stsEmpty;
+    QLabel* m_stsPinned;
     QLabel* m_stsDebugInfo;
-    QLabel* m_stsSysTime;
+    QLabel* m_stsRx;
+    QLabel* m_stsTx;
+    QLabel* m_stsResetCnt;
     QLabel* m_stsCopyright;
+
     QLabel* m_stsExit;
 
 signals:

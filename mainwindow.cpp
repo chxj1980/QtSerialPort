@@ -88,15 +88,28 @@ MainWindow::~MainWindow()
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if(watched == m_stsExit) // 程序退出
+    if (watched == m_stsExit) // 程序退出
     {
         //判断事件
         if(event->type() == QEvent::MouseButtonPress)
         {
-            m_stsDebugInfo->setText("press exit label");
             // TODO：直接退出还是发信号？
             emit sig_exit();
             return true; // 事件处理完毕
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (watched == m_stsResetCnt)
+    {
+        if(event->type() == QEvent::MouseButtonPress)
+        {
+            m_stsRx->setText("RX: 0");
+            m_stsTx->setText("TX: 0");
+            m_rxCnt = m_txCnt = 0;
+            return true;
         }
         else
         {
@@ -172,6 +185,10 @@ void MainWindow::initWindow()
 
     m_showTimestamp = 0;
     m_sendNewline = 0;
+
+    m_rxCnt = 0;
+    m_txCnt = 0;
+
     /////////////////////////////////////////////////////////////
     QStringList list;
     list.clear();
@@ -229,33 +246,42 @@ void MainWindow::initWindow()
 void MainWindow::initStatusBar()
 {
     // 状态栏分别为：
-    // 临时信息（可不用）做一空的label占位
+    // 置顶图标  注：与退出图标似乎无法同时显示，先舍弃
     // 提示信息（可多个）
-    // 系统时间
+    // RX、TX
     // 版本信息（或版权声明）
+    // 退出图标
 
     //ui->statusbar->setStyleSheet(QString("QStatusBar::item{border: 0px}")); // 不显示边框
     ui->statusbar->setSizeGripEnabled(false);//去掉状态栏右下角的三角
 
-
-    m_stsEmpty = new QLabel();
     m_stsDebugInfo = new QLabel();
-    m_stsSysTime = new QLabel();
+    m_stsRx = new QLabel();
+    m_stsTx = new QLabel();
+    m_stsResetCnt = new QLabel();
     m_stsCopyright = new QLabel();
     m_stsExit = new QLabel();
 
-    m_stsEmpty->setMinimumWidth(100);
-    ui->statusbar->addWidget(m_stsEmpty);
+    // 置顶图标
+
     m_stsDebugInfo->setMinimumWidth(this->width()/3);
     ui->statusbar->addWidget(m_stsDebugInfo);
 
-    //ui->statusbar->showMessage(tr("临时信息!"),2000);//显示临时信息2000ms 前面的正常信息被覆盖 当去掉后一项时，会一直显示
+    m_stsRx->setMinimumWidth(64);
+    ui->statusbar->addWidget(m_stsRx);
+    m_stsRx->setText("RX: 0");
 
-//    QDateTime dateTime(QDateTime::currentDateTime());
-//    QString timeStr = dateTime.toString("yyyy-MM-dd HH:mm:ss.zzz");
-//    m_stsSysTime->setText(timeStr);
-//    ui->statusbar->addPermanentWidget(m_stsSysTime);
+    m_stsTx->setMinimumWidth(64);
+    ui->statusbar->addWidget(m_stsTx);
+    m_stsTx->setText("TX: 0");
 
+    m_stsResetCnt->installEventFilter(this);
+    m_stsResetCnt->setFrameStyle(QFrame::Plain);
+    m_stsResetCnt->setText("复位计数");
+    m_stsResetCnt->setMinimumWidth(32);
+    ui->statusbar->addWidget(m_stsResetCnt);
+
+    printDebugInfo("欢迎使用");
     // 版权信息
     m_stsCopyright->setFrameStyle(QFrame::NoFrame);
     m_stsCopyright->setText(tr("  <a href=\"https://www.latelee.org\">技术主页</a>  "));
@@ -272,6 +298,12 @@ void MainWindow::initStatusBar()
     ui->statusbar->addPermanentWidget(m_stsExit);
 
     connect(this, &MainWindow::sig_exit, qApp, &QApplication::quit); // 直接关联到全局的退出槽
+}
+
+void MainWindow::printDebugInfo(const char* str)
+{
+    QString tmp = str;
+    m_stsDebugInfo->setText(tmp);
 }
 
 void MainWindow::timerEvent(QTimerEvent *event)
@@ -300,6 +332,8 @@ void MainWindow::sendData()
         sendData.append(0x0a);
     }
     //qDebug() << sendData;
+    m_txCnt += sendData.size();
+    m_stsTx->setText("TX: " + QString::number(m_txCnt));
     serial.write(sendData);
 }
 
@@ -323,6 +357,10 @@ void MainWindow::readyRead()
     QString info;
     QString tmpStr;
     QString timeStr = "";
+
+    m_rxCnt += buffer.size();
+    m_stsRx->setText("RX: " + QString::number(m_rxCnt));
+
     if (m_showTimestamp)
     {
         QDateTime dateTime(QDateTime::currentDateTime());
@@ -358,7 +396,7 @@ void MainWindow::readyRead()
     }
     
     // 根据值判断做逻辑处理，可做成函数
-    if (buf[0] == 0xa5 && buf[1] == 0x5a)
+    if (buf[0] == 0xaa && buf[1] == 0x55)
     {
     
     }
@@ -395,23 +433,18 @@ void MainWindow::on_btnOpen_clicked()
 //        default: break;
 //        }
         //设置奇偶校验
-        switch(ui->cbParity->currentIndex())
-        {
-        case 0: serial.setParity(QSerialPort::NoParity); break;
-        case 1: serial.setParity(QSerialPort::OddParity); break;
-        case 2: serial.setParity(QSerialPort::EvenParity); break;
-        default: break;
-        }
+        on_cbParity_currentIndexChanged(ui->cbParity->currentIndex());
+//        switch(ui->cbParity->currentIndex())
+//        {
+//        case 0: serial.setParity(QSerialPort::NoParity); break;
+//        case 1: serial.setParity(QSerialPort::OddParity); break;
+//        case 2: serial.setParity(QSerialPort::EvenParity); break;
+//        default: break;
+//        }
 
         //设置流控制
         on_cbFlow_currentIndexChanged(ui->cbFlow->currentIndex());
-//        switch(ui->cbFlow->currentIndex())
-//        {
-//        case 0: serial.setFlowControl(QSerialPort::NoFlowControl); break;
-//        case 1: serial.setFlowControl(QSerialPort::HardwareControl); break;
-//        case 2: serial.setFlowControl(QSerialPort::SoftwareControl); break;
-//        default: break;
-//        }
+        // 打开串口
         if(!serial.open(QIODevice::ReadWrite) && !serial.isOpen())
         {
             QMessageBox::about(NULL, tr("info"), tr("open port failed."));
