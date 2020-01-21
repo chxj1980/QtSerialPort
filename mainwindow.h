@@ -52,6 +52,7 @@ public:
     int m_sendTimer;
 
     int m_showTimestamp;
+    int m_sendNewline;
 
     int m_sendTimerId;
 
@@ -96,6 +97,8 @@ private slots:
     void on_cbParity_currentIndexChanged(int index);
 
     void on_cbFlow_currentIndexChanged(int index);
+
+    void on_chSendNewline_stateChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;

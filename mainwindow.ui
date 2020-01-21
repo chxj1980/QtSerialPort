@@ -69,9 +69,9 @@
     <property name="geometry">
      <rect>
       <x>9</x>
-      <y>161</y>
+      <y>158</y>
       <width>151</width>
-      <height>30</height>
+      <height>38</height>
      </rect>
     </property>
     <property name="text">
@@ -290,7 +290,7 @@
       <x>10</x>
       <y>271</y>
       <width>96</width>
-      <height>30</height>
+      <height>36</height>
      </rect>
     </property>
     <property name="text">
@@ -333,7 +333,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>发送新行</string>
+     <string>发送回车换行</string>
     </property>
    </widget>
    <widget class="QPlainTextEdit" name="txtSend">

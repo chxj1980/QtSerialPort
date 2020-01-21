@@ -169,6 +169,9 @@ void MainWindow::initWindow()
     m_sendHex = 0;
     m_sendTimer = 0;
     m_sendTimerId = 0;
+
+    m_showTimestamp = 0;
+    m_sendNewline = 0;
     /////////////////////////////////////////////////////////////
     QStringList list;
     list.clear();
@@ -290,6 +293,11 @@ void MainWindow::sendData()
     else if (m_sendHex == 0)
     {
         sendData = sendStr.toLatin1();
+    }
+    if (m_sendNewline == 1)
+    {
+        sendData.append(0x0d);
+        sendData.append(0x0a);
     }
     //qDebug() << sendData;
     serial.write(sendData);
@@ -581,5 +589,17 @@ void MainWindow::on_cbFlow_currentIndexChanged(int index)
     case 1: serial.setFlowControl(QSerialPort::HardwareControl); break;
     case 2: serial.setFlowControl(QSerialPort::SoftwareControl); break;
     default: break;
+    }
+}
+
+void MainWindow::on_chSendNewline_stateChanged(int arg1)
+{
+    if (arg1 == Qt::Checked)
+    {
+        m_sendNewline = 1;
+    }
+    else if (arg1 == Qt::Unchecked)
+    {
+        m_sendNewline = 0;
     }
 }
