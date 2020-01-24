@@ -11,6 +11,13 @@
 #include <QMessageBox>
 #include <QDateTime>
 
+#include <windows.h>
+#include <WinUser.h>
+#include <Dbt.h>
+#include <devguid.h>
+#include <SetupAPI.h>
+#include <InitGuid.h>
+
 #pragma execution_character_set("utf-8")
 
 QT_BEGIN_NAMESPACE
@@ -72,11 +79,17 @@ public:
 
     QLabel* m_stsExit;
 
+    char FirstDriveFromMask (qulonglong unitmask);
+    bool nativeEvent(const QByteArray & eventType, void * message, long*result);
+
 signals:
     void sig_exit();
+    void sig_deviceChanged(int flag);
 
 private slots:
     void readyRead();
+    void on_deviceChanged(int flag);
+
     void on_btnOpen_clicked();
 
     void on_btnSaveRecv_clicked();

@@ -230,7 +230,8 @@ void MainWindow::initWindow()
     //////////////////////////////////////////////////////////////
     foreach(const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
     {
-        ui->cbPortName->addItem(info.portName());
+        if (-1 == ui->cbPortName->findText(info.portName()))
+            ui->cbPortName->addItem(info.portName());
     }
     serial.close(); // try close
     serial.setReadBufferSize(8192);
@@ -239,6 +240,49 @@ void MainWindow::initWindow()
     //连接信号和槽
     QObject::connect(&serial, &QSerialPort::readyRead, this, &MainWindow::readyRead);
 
+    QObject::connect(this, &MainWindow::sig_deviceChanged, this, &MainWindow::on_deviceChanged);
+    // 注册各类设备，可根据要求删减
+#if 01
+    static const GUID GUID_DEVINTERFACE_LIST[] =
+    {
+    // GUID_DEVINTERFACE_USB_DEVICE
+    { 0xA5DCBF10, 0x6530, 0x11D2, { 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED } },
+    // GUID_DEVINTERFACE_DISK
+    { 0x53f56307, 0xb6bf, 0x11d0, { 0x94, 0xf2, 0x00, 0xa0, 0xc9, 0x1e, 0xfb, 0x8b } },
+    // GUID_DEVINTERFACE_HID,
+    { 0x4D1E55B2, 0xF16F, 0x11CF, { 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30 } },
+    // GUID_NDIS_LAN_CLASS
+    { 0xad498944, 0x762f, 0x11d0, { 0x8d, 0xcb, 0x00, 0xc0, 0x4f, 0xc3, 0x35, 0x8c } }
+    //// GUID_DEVINTERFACE_COMPORT
+    //{ 0x86e0d1e0, 0x8089, 0x11d0, { 0x9c, 0xe4, 0x08, 0x00, 0x3e, 0x30, 0x1f, 0x73 } },
+    //// GUID_DEVINTERFACE_SERENUM_BUS_ENUMERATOR
+    //{ 0x4D36E978, 0xE325, 0x11CE, { 0xBF, 0xC1, 0x08, 0x00, 0x2B, 0xE1, 0x03, 0x18 } },
+    //// GUID_DEVINTERFACE_PARALLEL
+    //{ 0x97F76EF0, 0xF883, 0x11D0, { 0xAF, 0x1F, 0x00, 0x00, 0xF8, 0x00, 0x84, 0x5C } },
+    //// GUID_DEVINTERFACE_PARCLASS
+    //{ 0x811FC6A5, 0xF728, 0x11D0, { 0xA5, 0x37, 0x00, 0x00, 0xF8, 0x75, 0x3E, 0xD1 } }
+    };
+
+    //注册插拔事件
+    HDEVNOTIFY hDevNotify;
+    DEV_BROADCAST_DEVICEINTERFACE NotifacationFiler;
+    ZeroMemory(&NotifacationFiler,sizeof(DEV_BROADCAST_DEVICEINTERFACE));
+    NotifacationFiler.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
+    NotifacationFiler.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
+
+    for(int i=0;i<sizeof(GUID_DEVINTERFACE_LIST)/sizeof(GUID);i++)
+    {
+        NotifacationFiler.dbcc_classguid = GUID_DEVINTERFACE_LIST[i];//GetCurrentUSBGUID();//m_usb->GetDriverGUID();
+
+        hDevNotify = RegisterDeviceNotification((HANDLE)this->winId(),&NotifacationFiler,DEVICE_NOTIFY_WINDOW_HANDLE);
+        if(!hDevNotify)
+        {
+            DWORD Err = GetLastError();
+            //qDebug() << "注册失败" <<endl;
+        }
+        //else
+    }
+#endif
     on_btnOpen_clicked(); // todo
 }
 
@@ -310,6 +354,53 @@ void MainWindow::timerEvent(QTimerEvent *event)
 {
     //qDebug() << "Timer ID:" << event->timerId();
     sendData();
+}
+
+bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, long *result)
+{
+    MSG* msg = reinterpret_cast<MSG*>(message);
+    int msgType = msg->message;
+    if(msgType==WM_DEVICECHANGE) // 设备插入事件
+    {
+        //qDebug() << "Event DEVICECHANGE Happend" << endl;
+        PDEV_BROADCAST_HDR lpdb = (PDEV_BROADCAST_HDR)msg->lParam;
+        switch (msg->wParam) {
+        case DBT_DEVICEARRIVAL:
+            if(lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME)
+            {
+                PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
+                if(lpdbv->dbcv_flags ==0) //插入u盘
+                {
+                }
+            }
+            if(lpdb->dbch_devicetype = DBT_DEVTYP_DEVICEINTERFACE)
+            {
+                //PDEV_BROADCAST_DEVICEINTERFACE pDevInf  = (PDEV_BROADCAST_DEVICEINTERFACE)lpdb;
+                //QString strname = QString::fromWCharArray(pDevInf->dbcc_name,pDevInf->dbcc_size);
+                //qDebug() << "arrive" + strname;
+                printDebugInfo("USB device arrive");
+                emit sig_deviceChanged(1);
+            }
+            break;
+        case DBT_DEVICEREMOVECOMPLETE:  // 设备移除事件
+            if(lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME)
+            {
+                PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
+                if(lpdbv->dbcv_flags == 0)
+                {
+                }
+            }
+            if(lpdb->dbch_devicetype = DBT_DEVTYP_DEVICEINTERFACE)
+            {
+                //PDEV_BROADCAST_DEVICEINTERFACE pDevInf  = (PDEV_BROADCAST_DEVICEINTERFACE)lpdb;
+                //QString strname = QString::fromWCharArray(pDevInf->dbcc_name,pDevInf->dbcc_size);
+                printDebugInfo("USB device removed");
+                emit sig_deviceChanged(0);
+            }
+            break;
+        }
+    }
+    return false;
 }
 
 void MainWindow::sendData()
@@ -398,9 +489,26 @@ void MainWindow::readyRead()
     // 根据值判断做逻辑处理，可做成函数
     if (buf[0] == 0xaa && buf[1] == 0x55)
     {
-    
+
     }
-    
+}
+
+void MainWindow::on_deviceChanged(int flag)
+{
+    if (flag == 1)
+    {
+        foreach(const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
+        {
+            if (-1 == ui->cbPortName->findText(info.portName()))
+                ui->cbPortName->addItem(info.portName());
+        }
+    }
+    else
+    {
+        serial.close();
+        ui->btnOpen->setText(tr("打开串口"));
+        ui->btnOpen->setIcon(QIcon(":images/notopened.ico"));
+    }
 }
 
 void MainWindow::on_btnOpen_clicked()
