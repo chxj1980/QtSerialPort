@@ -77,8 +77,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     initMainWindow();
-    initWindow();
     initStatusBar();
+    initWindow();
 }
 
 MainWindow::~MainWindow()
@@ -251,7 +251,7 @@ void MainWindow::initStatusBar()
     // RX、TX
     // 版本信息（或版权声明）
     // 退出图标
-
+    ui->statusbar->setMinimumHeight(22);
     //ui->statusbar->setStyleSheet(QString("QStatusBar::item{border: 0px}")); // 不显示边框
     ui->statusbar->setSizeGripEnabled(false);//去掉状态栏右下角的三角
 
@@ -264,7 +264,7 @@ void MainWindow::initStatusBar()
 
     // 置顶图标
 
-    m_stsDebugInfo->setMinimumWidth(this->width()/3);
+    m_stsDebugInfo->setMinimumWidth(this->width()/2);
     ui->statusbar->addWidget(m_stsDebugInfo);
 
     m_stsRx->setMinimumWidth(64);
@@ -291,9 +291,9 @@ void MainWindow::initStatusBar()
     // 退出图标
     m_stsExit->installEventFilter(this); // 安装事件过滤，以便获取其单击事件
     m_stsExit->setToolTip("Exit App");
+    m_stsExit->setMinimumWidth(32);
     // 贴图
     QPixmap exitIcon(":/images/exit.png");
-    m_stsExit->setMinimumWidth(32);
     m_stsExit->setPixmap(exitIcon);
     ui->statusbar->addPermanentWidget(m_stsExit);
 
@@ -405,49 +405,26 @@ void MainWindow::readyRead()
 
 void MainWindow::on_btnOpen_clicked()
 {
-//    qDebug() << ui->cbDatabit->currentText().toInt();
-//    qDebug() << ui->cbStopbit->currentText().toInt();
-//    qDebug() << ui->cbParity->currentIndex();
-
     if(ui->btnOpen->text()==QString("打开串口"))
     {
+        // 串口设备
         on_cbPortName_currentTextChanged(ui->cbPortName->currentText());
-        on_cbBaudrate_currentTextChanged(ui->cbBaudrate->currentText()); // tocheck...
+        // 波特率（注：QtSerial支持的枚举不多，但设置了其它值也行）
+        on_cbBaudrate_currentTextChanged(ui->cbBaudrate->currentText());
         //设置数据位
         on_cbDatabit_currentTextChanged(ui->cbDatabit->currentText());
-//        switch(ui->cbDatabit->currentText().toInt())
-//        {
-//        case 8: serial.setDataBits(QSerialPort::Data8); break;
-//        case 7: serial.setDataBits(QSerialPort::Data7); break;
-//        case 6: serial.setDataBits(QSerialPort::Data6); break;
-//        case 5: serial.setDataBits(QSerialPort::Data5); break;
-//        default: break;
-//        }
         //设置停止位
         on_cbStopbit_currentIndexChanged(ui->cbStopbit->currentIndex());
-//        switch(ui->cbStopbit->currentIndex())
-//        {
-//        case 0: serial.setStopBits(QSerialPort::OneStop); break;
-//        case 1: serial.setStopBits(QSerialPort::OneAndHalfStop); break;
-//        case 2: serial.setStopBits(QSerialPort::TwoStop); break;
-//        default: break;
-//        }
         //设置奇偶校验
         on_cbParity_currentIndexChanged(ui->cbParity->currentIndex());
-//        switch(ui->cbParity->currentIndex())
-//        {
-//        case 0: serial.setParity(QSerialPort::NoParity); break;
-//        case 1: serial.setParity(QSerialPort::OddParity); break;
-//        case 2: serial.setParity(QSerialPort::EvenParity); break;
-//        default: break;
-//        }
-
         //设置流控制
         on_cbFlow_currentIndexChanged(ui->cbFlow->currentIndex());
+
         // 打开串口
         if(!serial.open(QIODevice::ReadWrite) && !serial.isOpen())
         {
-            QMessageBox::about(NULL, tr("info"), tr("open port failed."));
+            //QMessageBox::about(NULL, tr("info"), tr("open port failed."));
+            printDebugInfo("open port failed.\n");
             return;
         }
 
