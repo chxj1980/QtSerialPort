@@ -647,6 +647,7 @@ void MainWindow::on_ckSendTimer_stateChanged(int arg1)
         {
             killTimer(m_sendTimerId);
             m_sendTimerId = 0;
+            ui->btnSend->setText("发送");
         }
     }
 }
