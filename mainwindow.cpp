@@ -290,7 +290,6 @@ void MainWindow::initWindow()
 void MainWindow::initStatusBar()
 {
     // 状态栏分别为：
-    // 置顶图标  注：与退出图标似乎无法同时显示，先舍弃
     // 提示信息（可多个）
     // RX、TX
     // 版本信息（或版权声明）
@@ -305,8 +304,6 @@ void MainWindow::initStatusBar()
     m_stsResetCnt = new QLabel();
     m_stsCopyright = new QLabel();
     m_stsExit = new QLabel();
-
-    // 置顶图标
 
     m_stsDebugInfo->setMinimumWidth(this->width()/2);
     ui->statusbar->addWidget(m_stsDebugInfo);
