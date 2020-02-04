@@ -309,20 +309,20 @@ void MainWindow::initStatusBar()
     ui->statusbar->addWidget(m_stsDebugInfo);
 
     m_stsRx->setMinimumWidth(64);
-    ui->statusbar->addWidget(m_stsRx);
+    ui->statusbar->addPermanentWidget(m_stsRx);
     m_stsRx->setText("RX: 0");
 
     m_stsTx->setMinimumWidth(64);
-    ui->statusbar->addWidget(m_stsTx);
+    ui->statusbar->addPermanentWidget(m_stsTx);
     m_stsTx->setText("TX: 0");
 
     m_stsResetCnt->installEventFilter(this);
     m_stsResetCnt->setFrameStyle(QFrame::Plain);
     m_stsResetCnt->setText("复位计数");
-    m_stsResetCnt->setMinimumWidth(32);
-    ui->statusbar->addWidget(m_stsResetCnt);
+    m_stsResetCnt->setMinimumWidth(100);
+    ui->statusbar->addPermanentWidget(m_stsResetCnt);
 
-    printDebugInfo("欢迎使用");
+    printDebugInfo("欢迎使用串口调试助手");
     // 版权信息
     m_stsCopyright->setFrameStyle(QFrame::NoFrame);
     m_stsCopyright->setText(tr("  <a href=\"https://www.latelee.org\">技术主页</a>  "));
@@ -347,6 +347,12 @@ void MainWindow::printDebugInfo(const char* str)
     m_stsDebugInfo->setText(tmp);
 }
 
+void MainWindow::showMessage(const char* str)
+{
+    QString tmp = str;
+    ui->statusbar->showMessage(tmp, 500);
+}
+
 void MainWindow::timerEvent(QTimerEvent *event)
 {
     //qDebug() << "Timer ID:" << event->timerId();
@@ -366,16 +372,16 @@ bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, long *r
             if(lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME)
             {
                 PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
-                if(lpdbv->dbcv_flags ==0) //插入u盘
+                if(lpdbv->dbcv_flags == 0) //插入u盘
                 {
                 }
             }
-            if(lpdb->dbch_devicetype = DBT_DEVTYP_DEVICEINTERFACE)
+            if(lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
             {
                 //PDEV_BROADCAST_DEVICEINTERFACE pDevInf  = (PDEV_BROADCAST_DEVICEINTERFACE)lpdb;
                 //QString strname = QString::fromWCharArray(pDevInf->dbcc_name,pDevInf->dbcc_size);
                 //qDebug() << "arrive" + strname;
-                printDebugInfo("USB device arrive");
+                showMessage("USB device arrive");
                 emit sig_deviceChanged(1);
             }
             break;
@@ -387,11 +393,11 @@ bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, long *r
                 {
                 }
             }
-            if(lpdb->dbch_devicetype = DBT_DEVTYP_DEVICEINTERFACE)
+            if(lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
             {
                 //PDEV_BROADCAST_DEVICEINTERFACE pDevInf  = (PDEV_BROADCAST_DEVICEINTERFACE)lpdb;
                 //QString strname = QString::fromWCharArray(pDevInf->dbcc_name,pDevInf->dbcc_size);
-                printDebugInfo("USB device removed");
+                showMessage("USB device removed");
                 emit sig_deviceChanged(0);
             }
             break;
@@ -402,6 +408,11 @@ bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, long *r
 
 void MainWindow::sendData()
 {
+    if (!serial.isOpen())
+    {
+        showMessage("serial port not opened.");
+        return;
+    }
     QString sendStr = ui->txtSend->toPlainText().toLatin1().toLower();
     QByteArray sendData;
     QString showStr;
@@ -452,7 +463,7 @@ void MainWindow::readyRead()
     if (m_showTimestamp)
     {
         QDateTime dateTime(QDateTime::currentDateTime());
-        timeStr = "[" + dateTime.toString("yyyy-MM-dd HH:mm::ss.zzz") + "] ";
+        timeStr = "[" + dateTime.toString("yyyy-MM-dd HH:mm:ss.zzz") + "] ";
     }
 
     if (m_recvHex == 1)
@@ -529,10 +540,11 @@ void MainWindow::on_btnOpen_clicked()
         if(!serial.open(QIODevice::ReadWrite) && !serial.isOpen())
         {
             //QMessageBox::about(NULL, tr("info"), tr("open port failed."));
-            printDebugInfo("open port failed.\n");
+            showMessage("open port failed.\n");
             return;
         }
 
+        showMessage("port opened.");
         ui->btnOpen->setText(tr("关闭串口"));
         ui->btnOpen->setIcon(QIcon(":images/opened.ico"));
     }
@@ -540,6 +552,7 @@ void MainWindow::on_btnOpen_clicked()
     {
         serial.close();
 
+        showMessage("port closed.");
         ui->btnOpen->setText(tr("打开串口"));
         ui->btnOpen->setIcon(QIcon(":images/notopened.ico"));
     }

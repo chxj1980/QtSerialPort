@@ -49,6 +49,7 @@ public:
     void sendHexData(QString& tips, uint8_t* ibuf, uint8_t ilen);
 
     void printDebugInfo(const char* str);
+    void showMessage(const char* str);
 
 
     QSerialPort serial;
