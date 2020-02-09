@@ -1,5 +1,8 @@
 Qt5串口调试助手
 
+运行界面：<br>
+![gui](https://github.com/latelee/QtSerialPort/blob/master/images/1.png)
+
 ## 功能
 具备串口收发功能。  
 - [x] 串口参数设置。默认115200,N，8，1  
